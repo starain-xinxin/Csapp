@@ -160,7 +160,7 @@ Example usages:
     Bit Representation 0x00e822bb, sign = 0, exponent = 0x01, fraction = 0x6822bb
     Normalized.  +1.8135598898 X 2^(-126)
 
-    中文翻译
+  
 
 
 

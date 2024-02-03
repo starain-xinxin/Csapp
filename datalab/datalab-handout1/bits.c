@@ -402,8 +402,30 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-
-  return 2;
+    unsigned exp, frac, s, mask1, mask2, mask3, result;
+    mask1 = 1 << 31;
+    mask2 = 0xff << 23;
+    mask3 = ~(mask1 + mask2);
+    s = uf & mask1;
+    exp = uf & mask2;
+    frac = uf & mask3;
+    // NaN与无穷的情况
+    if (exp == mask2)
+      return uf;
+    // 规格与非规格
+    else{
+      // 非规格区： 符号位不动，剩下的<<1
+      if (!exp){
+        result = s + ((exp << 1)&~mask1) + (frac << 1);
+        return result;
+      }
+      // 规格区： 符号位不动， exp位+1
+      else{
+          result = s + (exp+(1<<23)) + frac;
+          return result;
+      }
+      
+    }
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -418,7 +440,23 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+    unsigned s, exp, frac, mask1, mask2, mask3, F;  int result, E;
+    mask1 = 1<<31;  mask2 = 0xff<<23;   mask3 = ~(mask1+mask2);
+    s = !!(uf & mask1);   exp = (uf & mask2) >> 23;   frac = uf & mask3;    E = exp - 127;
+    // 无穷 NaN
+    if(exp == 0xff || E > 31)  return mask1;
+    // 由于0.xxx都将被舍去, 整数溢出也会舍去
+    if(E<0)  return 0;
+    F = frac + (1<<23);
+    // 判断E与23的关系
+    // E>=23指数幂够高，左移或不移
+    if(E>=23)
+        F = F << (E-23);
+    else
+        F = F >> (23-E);
+    if(s)	result = F* ~0;
+    else    result = F;
+    return result;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -434,5 +472,15 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+	int result;
+	// 非规格区
+	if(x>=-149 && x<=-127){
+		result = (1 << 22) >> (-x - 127);
+	}
+	else if(x<=127 && x >=-126){
+		result = (x+127) << 23;
+	}
+	else if(x<-149)		return 0;
+	else	return (0xff<<23);
+    return result;
 }
